@@ -14,7 +14,9 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedClosetRouteImport } from './routes/_authenticated/closet'
 import { Route as AuthenticatedDecideRouteImport } from './routes/_authenticated/decide'
+import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated/insights'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
+import { Route as AuthenticatedUnlovedRouteImport } from './routes/_authenticated/unloved'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,9 +42,19 @@ const AuthenticatedDecideRoute = AuthenticatedDecideRouteImport.update({
   path: '/decide',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInsightsRoute = AuthenticatedInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
   id: '/today',
   path: '/today',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedUnlovedRoute = AuthenticatedUnlovedRouteImport.update({
+  id: '/unloved',
+  path: '/unloved',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
@@ -51,14 +63,18 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/closet': typeof AuthenticatedClosetRoute
   '/decide': typeof AuthenticatedDecideRoute
+  '/insights': typeof AuthenticatedInsightsRoute
   '/today': typeof AuthenticatedTodayRoute
+  '/unloved': typeof AuthenticatedUnlovedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/closet': typeof AuthenticatedClosetRoute
   '/decide': typeof AuthenticatedDecideRoute
+  '/insights': typeof AuthenticatedInsightsRoute
   '/today': typeof AuthenticatedTodayRoute
+  '/unloved': typeof AuthenticatedUnlovedRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -67,13 +83,17 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/closet': typeof AuthenticatedClosetRoute
   '/_authenticated/decide': typeof AuthenticatedDecideRoute
+  '/_authenticated/insights': typeof AuthenticatedInsightsRoute
   '/_authenticated/today': typeof AuthenticatedTodayRoute
+  '/_authenticated/unloved': typeof AuthenticatedUnlovedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/closet' | '/decide' | '/today'
+  fullPaths:
+    '/' | '/auth' | '/closet' | '/decide' | '/insights' | '/today' | '/unloved'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/closet' | '/decide' | '/today'
+  to:
+    '/' | '/auth' | '/closet' | '/decide' | '/insights' | '/today' | '/unloved'
   id:
     | '__root__'
     | '/'
@@ -81,7 +101,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/closet'
     | '/_authenticated/decide'
+    | '/_authenticated/insights'
     | '/_authenticated/today'
+    | '/_authenticated/unloved'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -127,11 +149,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDecideRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/insights': {
+      id: '/_authenticated/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof AuthenticatedInsightsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/today': {
       id: '/_authenticated/today'
       path: '/today'
       fullPath: '/today'
       preLoaderRoute: typeof AuthenticatedTodayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/unloved': {
+      id: '/_authenticated/unloved'
+      path: '/unloved'
+      fullPath: '/unloved'
+      preLoaderRoute: typeof AuthenticatedUnlovedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
@@ -140,13 +176,17 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedClosetRoute: typeof AuthenticatedClosetRoute
   AuthenticatedDecideRoute: typeof AuthenticatedDecideRoute
+  AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
+  AuthenticatedUnlovedRoute: typeof AuthenticatedUnlovedRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedClosetRoute: AuthenticatedClosetRoute,
   AuthenticatedDecideRoute: AuthenticatedDecideRoute,
+  AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
+  AuthenticatedUnlovedRoute: AuthenticatedUnlovedRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
