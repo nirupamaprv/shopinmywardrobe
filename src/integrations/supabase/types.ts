@@ -14,7 +14,191 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      item_feedback: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          item_id: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          day?: string
+          id?: string
+          item_id: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          item_id?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_feedback_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      items: {
+        Row: {
+          category: string
+          color: string
+          created_at: string
+          id: string
+          image_path: string | null
+          last_worn_at: string | null
+          name: string
+          pattern: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          color?: string
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          last_worn_at?: string | null
+          name: string
+          pattern?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          color?: string
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          last_worn_at?: string | null
+          name?: string
+          pattern?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      outfits: {
+        Row: {
+          bottom_id: string
+          created_at: string
+          id: string
+          rating: number | null
+          suggested_on: string
+          top_id: string
+          user_id: string
+        }
+        Insert: {
+          bottom_id: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+          suggested_on?: string
+          top_id: string
+          user_id: string
+        }
+        Update: {
+          bottom_id?: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+          suggested_on?: string
+          top_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outfits_bottom_id_fkey"
+            columns: ["bottom_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outfits_top_id_fkey"
+            columns: ["top_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unloved_reviews: {
+        Row: {
+          created_at: string
+          id: string
+          reviewed_on: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reviewed_on?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reviewed_on?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wears: {
+        Row: {
+          bottom_id: string | null
+          created_at: string
+          id: string
+          top_id: string | null
+          user_id: string
+          worn_on: string
+        }
+        Insert: {
+          bottom_id?: string | null
+          created_at?: string
+          id?: string
+          top_id?: string | null
+          user_id: string
+          worn_on?: string
+        }
+        Update: {
+          bottom_id?: string | null
+          created_at?: string
+          id?: string
+          top_id?: string | null
+          user_id?: string
+          worn_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wears_bottom_id_fkey"
+            columns: ["bottom_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wears_top_id_fkey"
+            columns: ["top_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
