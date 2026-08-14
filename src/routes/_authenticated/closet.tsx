@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, Trash2 } from "lucide-react";
+import { Camera, Image as ImageIcon, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { GarmentImage } from "@/components/GarmentImage";
 import { Button } from "@/components/ui/button";
@@ -138,6 +138,7 @@ function AddItemDialog({ category, onDone }: { category: Category; onDone: () =>
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   async function save() {
     setBusy(true);
@@ -199,12 +200,39 @@ function AddItemDialog({ category, onDone }: { category: Category; onDone: () =>
             ) : (
               <span className="flex flex-col items-center gap-2 text-muted-foreground">
                 <Camera className="h-6 w-6" />
-                <span className="eyebrow">Take or choose a photo</span>
+                <span className="eyebrow">Choose a photo</span>
               </span>
             )}
           </button>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => inputRef.current?.click()}
+              className="rounded-none text-xs uppercase tracking-[0.18em]"
+            >
+              <ImageIcon className="mr-1.5 h-3.5 w-3.5" /> Gallery
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => cameraRef.current?.click()}
+              className="rounded-none text-xs uppercase tracking-[0.18em]"
+            >
+              <Camera className="mr-1.5 h-3.5 w-3.5" /> Camera
+            </Button>
+          </div>
           <input
             ref={inputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              setFile(f);
+              setPreview(f ? URL.createObjectURL(f) : null);
+            }}
+          />
+          <input
+            ref={cameraRef}
             type="file"
             accept="image/*"
             capture="environment"
