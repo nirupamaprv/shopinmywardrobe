@@ -1,17 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, Image as ImageIcon, Trash2 } from "lucide-react";
+import { Camera, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { GarmentImage } from "@/components/GarmentImage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { setStatus } from "@/lib/actions";
-import { COLORS, PATTERNS, daysSince, type Category, type Item, type Status } from "@/lib/wardrobe";
-import { useItems, useRefreshWardrobe } from "@/hooks/useWardrobe";
+import { COLORS, PATTERNS, daysSince, wearCount, type Category, type Item, type Status, type Wear } from "@/lib/wardrobe";
+import { useItems, useRefreshWardrobe, useWears } from "@/hooks/useWardrobe";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/closet")({
@@ -36,6 +47,7 @@ const STATUS_LABEL: Record<Status, string> = {
 
 function ClosetPage() {
   const items = useItems();
+  const wears = useWears();
   const refresh = useRefreshWardrobe();
   const [tab, setTab] = useState<Category>("top");
 
@@ -69,7 +81,7 @@ function ClosetPage() {
 
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
         {list.map((item) => (
-          <ItemCard key={item.id} item={item} onDone={refresh} />
+          <ItemCard key={item.id} item={item} wears={wears.data ?? []} onDone={refresh} />
         ))}
       </div>
 
@@ -78,7 +90,7 @@ function ClosetPage() {
           <h2 className="font-display text-2xl">Marked to sell</h2>
           <div className="mt-4 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
             {selling.map((item) => (
-              <ItemCard key={item.id} item={item} onDone={refresh} />
+              <ItemCard key={item.id} item={item} wears={wears.data ?? []} onDone={refresh} />
             ))}
           </div>
         </section>
@@ -87,8 +99,9 @@ function ClosetPage() {
   );
 }
 
-function ItemCard({ item, onDone }: { item: Item; onDone: () => void }) {
+function ItemCard({ item, wears, onDone }: { item: Item; wears: Wear[]; onDone: () => void }) {
   const since = daysSince(item.last_worn_at);
+  const worn = wearCount(item.id, wears);
   return (
     <div className="border border-border bg-card">
       <GarmentImage item={item} className="aspect-[3/4]" />
@@ -113,19 +126,171 @@ function ItemCard({ item, onDone }: { item: Item; onDone: () => void }) {
             <option key={s} value={s}>{STATUS_LABEL[s]}</option>
           ))}
         </select>
-        <button
-          onClick={async () => {
-            if (item.image_path) await supabase.storage.from("garments").remove([item.image_path]);
-            await supabase.from("items").delete().eq("id", item.id);
-            onDone();
-            toast.success("Removed from closet");
-          }}
-          className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-destructive"
-        >
-          <Trash2 className="h-3 w-3" /> Delete
-        </button>
+        <div className="flex items-center justify-between pt-1">
+          <EditItemDialog item={item} onDone={onDone} />
+          <DeleteItemButton item={item} wornDays={worn} onDone={onDone} />
+        </div>
       </div>
     </div>
+  );
+}
+
+function DeleteItemButton({ item, wornDays, onDone }: { item: Item; wornDays: number; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <button className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-destructive">
+          <Trash2 className="h-3 w-3" /> Delete
+        </button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="rounded-none">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="font-display text-2xl font-light">
+            Delete “{item.name}”?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {wornDays > 0 ? (
+              <>
+                This piece is in your wear logs — it was worn on {wornDays} distinct{" "}
+                {wornDays === 1 ? "day" : "days"}. Deleting it will also permanently erase those wear
+                records, past outfit pairings and likes/dislikes tied to it. Your history counts and
+                Insights will change. This cannot be undone.
+              </>
+            ) : (
+              <>
+                This piece has never been logged as worn. It will be removed from your closet along with
+                its photo. This cannot be undone.
+              </>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-none">Keep it</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={busy}
+            className="rounded-none bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={async (e) => {
+              e.preventDefault();
+              setBusy(true);
+              try {
+                if (item.image_path) await supabase.storage.from("garments").remove([item.image_path]);
+                const { error } = await supabase.from("items").delete().eq("id", item.id);
+                if (error) throw error;
+                onDone();
+                toast.success("Removed from closet");
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Could not delete");
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            Delete permanently
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function EditItemDialog({ item, onDone }: { item: Item; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(item.name);
+  const [color, setColor] = useState(item.color);
+  const [pattern, setPattern] = useState(item.pattern);
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from("items")
+        .update({ name: name.trim() || item.name, color, pattern })
+        .eq("id", item.id);
+      if (error) throw error;
+      toast.success("Details updated");
+      setOpen(false);
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) {
+          setName(item.name);
+          setColor(item.color);
+          setPattern(item.pattern);
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <button className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground">
+          <Pencil className="h-3 w-3" /> Edit
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-none">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl font-light">Edit piece</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label className="eyebrow">Name</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-2 rounded-none"
+            />
+          </div>
+          <div>
+            <Label className="eyebrow">Colour</Label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {COLORS.map((c) => (
+                <button
+                  key={c.value}
+                  onClick={() => setColor(c.value)}
+                  title={c.label}
+                  aria-label={c.label}
+                  className={cn(
+                    "h-7 w-7 border",
+                    color === c.value
+                      ? "ring-2 ring-foreground ring-offset-2 ring-offset-background"
+                      : "border-border",
+                  )}
+                  style={{ backgroundColor: c.hex }}
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label className="eyebrow">Pattern</Label>
+            <select
+              value={pattern}
+              onChange={(e) => setPattern(e.target.value)}
+              className="mt-2 w-full border border-border bg-card px-3 py-2 text-sm"
+            >
+              {PATTERNS.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+          <Button
+            onClick={save}
+            disabled={busy}
+            className="w-full rounded-none text-xs uppercase tracking-[0.18em]"
+          >
+            {busy ? "Saving…" : "Save changes"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
