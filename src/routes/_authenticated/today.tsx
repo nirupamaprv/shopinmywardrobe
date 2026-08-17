@@ -117,7 +117,7 @@ function TodayPage() {
       subtitle="Fresh pairings that skip the colors you wore in the last three days, and skip anything stored as seasonal or saved for occasions."
       action={
         <div className="flex items-center gap-3">
-          <LogWearDialog items={items.data ?? []} onDone={refresh} />
+          <LogWearDialog items={items.data ?? []} onSave={saveWear} />
           <Button variant="outline" className="rounded-none text-xs uppercase tracking-[0.18em]" onClick={reshuffle}>
             Reshuffle
           </Button>
@@ -207,7 +207,13 @@ function EmptyCloset() {
   );
 }
 
-function LogWearDialog({ items, onDone }: { items: Item[]; onDone: () => void }) {
+function LogWearDialog({
+  items,
+  onSave,
+}: {
+  items: Item[];
+  onSave: (topId: string, bottomId: string, day: string) => Promise<void>;
+}) {
   const [open, setOpen] = useState(false);
   const [topId, setTopId] = useState("");
   const [bottomId, setBottomId] = useState("");
@@ -265,10 +271,8 @@ function LogWearDialog({ items, onDone }: { items: Item[]; onDone: () => void })
             className="w-full rounded-none text-xs uppercase tracking-[0.18em]"
             disabled={!topId || !bottomId}
             onClick={async () => {
-              await logWear(topId, bottomId, date);
-              onDone();
+              await onSave(topId, bottomId, date);
               setOpen(false);
-              toast.success("Added to your wear history");
             }}
           >
             Save
