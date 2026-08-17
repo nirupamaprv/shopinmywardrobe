@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
 import { GarmentImage } from "@/components/GarmentImage";
-import { colorHex, daysSince, itemStats, wearCount } from "@/lib/wardrobe";
+import { colorHex, daysSince, distinctWears, itemStats, wearCount, wearCountWithin } from "@/lib/wardrobe";
 import { useFeedback, useItems, useOutfits, useWears } from "@/hooks/useWardrobe";
 
 export const Route = createFileRoute("/_authenticated/insights")({
@@ -25,12 +25,19 @@ function InsightsPage() {
 
   const data = useMemo(() => {
     const all = items.data ?? [];
-    const w = wears.data ?? [];
+    const w = distinctWears(wears.data ?? []);
     const f = feedback.data ?? [];
     const o = outfits.data ?? [];
 
     const ranked = all
-      .map((i) => ({ item: i, wears: wearCount(i.id, w), ...itemStats(i.id, f) }))
+      .map((i) => ({
+        item: i,
+        wears: wearCount(i.id, w),
+        week: wearCountWithin(i.id, w, 7),
+        month: wearCountWithin(i.id, w, 30),
+        year: wearCountWithin(i.id, w, 365),
+        ...itemStats(i.id, f),
+      }))
       .sort((a, b) => b.wears - a.wears || b.likes - a.likes);
 
     const colorWears = new Map<string, number>();
@@ -40,10 +47,14 @@ function InsightsPage() {
     const topColors = [...colorWears.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
 
     const combos = new Map<string, number>();
+    const comboDays = new Set<string>();
     for (const wear of w) {
       const t = all.find((i) => i.id === wear.top_id);
       const b = all.find((i) => i.id === wear.bottom_id);
       if (t && b) {
+        const dayKey = `${wear.worn_on}|${t.id}|${b.id}`;
+        if (comboDays.has(dayKey)) continue;
+        comboDays.add(dayKey);
         const key = `${t.color} + ${b.color}`;
         combos.set(key, (combos.get(key) ?? 0) + 1);
       }
@@ -53,7 +64,8 @@ function InsightsPage() {
     const idle = ranked.filter((r) => r.wears === 0 && r.item.status !== "sell");
     const likedLooks = o.filter((x) => x.rating === 1).length;
 
-    return { ranked, topColors, topCombos, idle, likedLooks, total: all.length, worn: w.length };
+    const wornDays = new Set(w.map((x) => x.worn_on)).size;
+    return { ranked, topColors, topCombos, idle, likedLooks, total: all.length, worn: wornDays };
   }, [items.data, wears.data, feedback.data, outfits.data]);
 
   return (
@@ -64,7 +76,7 @@ function InsightsPage() {
       <div className="grid gap-5 sm:grid-cols-4">
         {[
           ["Pieces", data.total],
-          ["Outfits worn", data.worn],
+          ["Days logged", data.worn],
           ["Looks liked", data.likedLooks],
           ["Never worn", data.idle.length],
         ].map(([label, value]) => (
@@ -83,7 +95,10 @@ function InsightsPage() {
               <GarmentImage item={r.item} className="aspect-[3/4]" />
               <div className="p-3">
                 <p className="font-display text-base leading-tight">{r.item.name}</p>
-                <p className="eyebrow mt-1">worn {r.wears}×</p>
+                <p className="eyebrow mt-1">worn {r.wears} day{r.wears === 1 ? "" : "s"}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {r.week} this week · {r.month} this month · {r.year} this year
+                </p>
               </div>
             </div>
           ))}

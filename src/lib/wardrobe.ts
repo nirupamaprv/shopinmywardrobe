@@ -124,7 +124,37 @@ export function isUnloved(itemId: string, feedback: Feedback[]) {
 }
 
 export function wearCount(itemId: string, wears: Wear[]) {
-  return wears.filter((w) => w.top_id === itemId || w.bottom_id === itemId).length;
+  // A piece counts once per distinct day, no matter how many times it is logged.
+  return new Set(
+    wears.filter((w) => w.top_id === itemId || w.bottom_id === itemId).map((w) => w.worn_on),
+  ).size;
+}
+
+/** Distinct days a piece was worn within the last `days` days. */
+export function wearCountWithin(itemId: string, wears: Wear[], days: number, from = today()) {
+  return new Set(
+    wears
+      .filter(
+        (w) =>
+          (w.top_id === itemId || w.bottom_id === itemId) &&
+          daysBetween(w.worn_on, from) >= 0 &&
+          daysBetween(w.worn_on, from) < days,
+      )
+      .map((w) => w.worn_on),
+  ).size;
+}
+
+/** Wear rows reduced to one entry per pair per day. */
+export function distinctWears(wears: Wear[]): Wear[] {
+  const seen = new Set<string>();
+  const out: Wear[] = [];
+  for (const w of wears) {
+    const key = `${w.worn_on}|${w.top_id ?? ""}|${w.bottom_id ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(w);
+  }
+  return out;
 }
 
 export function generateMatches({

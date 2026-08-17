@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { logWear, rateOutfit, saveSuggestions } from "@/lib/actions";
+import { logWear, pairWornOn, rateOutfit, saveSuggestions } from "@/lib/actions";
 import { generateMatches, today, type Item } from "@/lib/wardrobe";
 import { useFeedback, useItems, useOutfits, useRefreshWardrobe, useWears } from "@/hooks/useWardrobe";
 
@@ -39,6 +39,24 @@ function TodayPage() {
   const refresh = useRefreshWardrobe();
   const [special, setSpecial] = useState(false);
   const date = today();
+
+  async function saveWear(topId: string, bottomId: string, day: string) {
+    const all = wears.data ?? [];
+    const prev = new Date(new Date(day).getTime() - 86400000).toISOString().slice(0, 10);
+    if (pairWornOn(all, topId, bottomId, day)) {
+      toast.info("Already logged today — counted once");
+      return;
+    }
+    if (pairWornOn(all, topId, bottomId, prev)) {
+      const ok = window.confirm("You wore this same pairing the day before. Log it again?");
+      if (!ok) return;
+    }
+    const res = await logWear(topId, bottomId, day);
+    refresh();
+    toast.success(res.duplicate ? "Already logged today — counted once" : "Logged — nice choice");
+  }
+
+  const recordWear = (topId: string, bottomId: string) => saveWear(topId, bottomId, date);
 
   const ready = items.data && wears.data && feedback.data && outfits.data;
 
@@ -100,7 +118,7 @@ function TodayPage() {
       subtitle="Fresh pairings that skip the colors you wore in the last three days, and skip anything stored as seasonal or saved for occasions."
       action={
         <div className="flex items-center gap-3">
-          <LogWearDialog items={items.data ?? []} onDone={refresh} />
+          <LogWearDialog items={items.data ?? []} onSave={saveWear} />
           <Button variant="outline" className="rounded-none text-xs uppercase tracking-[0.18em]" onClick={reshuffle}>
             Reshuffle
           </Button>
@@ -127,9 +145,7 @@ function TodayPage() {
               top={m.top}
               bottom={m.bottom}
               onWore={async () => {
-                await logWear(m.top.id, m.bottom.id, date);
-                refresh();
-                toast.success("Logged");
+                await recordWear(m.top.id, m.bottom.id);
               }}
               worn={wornToday.has(`${m.top.id}|${m.bottom.id}`)}
             />
@@ -157,9 +173,7 @@ function TodayPage() {
                   refresh();
                 }}
                 onWore={async () => {
-                  await logWear(top.id, bottom.id, date);
-                  refresh();
-                  toast.success("Logged — nice choice");
+                  await recordWear(top.id, bottom.id);
                 }}
               />
             );
@@ -194,7 +208,13 @@ function EmptyCloset() {
   );
 }
 
-function LogWearDialog({ items, onDone }: { items: Item[]; onDone: () => void }) {
+function LogWearDialog({
+  items,
+  onSave,
+}: {
+  items: Item[];
+  onSave: (topId: string, bottomId: string, day: string) => Promise<void>;
+}) {
   const [open, setOpen] = useState(false);
   const [topId, setTopId] = useState("");
   const [bottomId, setBottomId] = useState("");
@@ -252,10 +272,8 @@ function LogWearDialog({ items, onDone }: { items: Item[]; onDone: () => void })
             className="w-full rounded-none text-xs uppercase tracking-[0.18em]"
             disabled={!topId || !bottomId}
             onClick={async () => {
-              await logWear(topId, bottomId, date);
-              onDone();
+              await onSave(topId, bottomId, date);
               setOpen(false);
-              toast.success("Added to your wear history");
             }}
           >
             Save
