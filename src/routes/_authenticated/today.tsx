@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { logWear, rateOutfit, saveSuggestions } from "@/lib/actions";
+import { logWear, pairWornOn, rateOutfit, saveSuggestions } from "@/lib/actions";
 import { generateMatches, today, type Item } from "@/lib/wardrobe";
 import { useFeedback, useItems, useOutfits, useRefreshWardrobe, useWears } from "@/hooks/useWardrobe";
 
@@ -39,6 +39,23 @@ function TodayPage() {
   const refresh = useRefreshWardrobe();
   const [special, setSpecial] = useState(false);
   const date = today();
+
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  async function recordWear(topId: string, bottomId: string) {
+    const all = wears.data ?? [];
+    if (pairWornOn(all, topId, bottomId, date)) {
+      toast.info("Already logged today — counted once");
+      return;
+    }
+    if (pairWornOn(all, topId, bottomId, yesterday)) {
+      const ok = window.confirm("You wore this same pairing yesterday. Log it again for today?");
+      if (!ok) return;
+    }
+    const res = await logWear(topId, bottomId, date);
+    refresh();
+    toast.success(res.duplicate ? "Already logged today — counted once" : "Logged — nice choice");
+  }
 
   const ready = items.data && wears.data && feedback.data && outfits.data;
 
@@ -127,9 +144,7 @@ function TodayPage() {
               top={m.top}
               bottom={m.bottom}
               onWore={async () => {
-                await logWear(m.top.id, m.bottom.id, date);
-                refresh();
-                toast.success("Logged");
+                await recordWear(m.top.id, m.bottom.id);
               }}
               worn={wornToday.has(`${m.top.id}|${m.bottom.id}`)}
             />
@@ -157,9 +172,7 @@ function TodayPage() {
                   refresh();
                 }}
                 onWore={async () => {
-                  await logWear(top.id, bottom.id, date);
-                  refresh();
-                  toast.success("Logged — nice choice");
+                  await recordWear(top.id, bottom.id);
                 }}
               />
             );
