@@ -42,20 +42,23 @@ function TodayPage() {
 
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 
-  async function recordWear(topId: string, bottomId: string) {
+  async function saveWear(topId: string, bottomId: string, day: string) {
     const all = wears.data ?? [];
-    if (pairWornOn(all, topId, bottomId, date)) {
+    const prev = new Date(new Date(day).getTime() - 86400000).toISOString().slice(0, 10);
+    if (pairWornOn(all, topId, bottomId, day)) {
       toast.info("Already logged today — counted once");
       return;
     }
-    if (pairWornOn(all, topId, bottomId, yesterday)) {
-      const ok = window.confirm("You wore this same pairing yesterday. Log it again for today?");
+    if (pairWornOn(all, topId, bottomId, prev)) {
+      const ok = window.confirm("You wore this same pairing the day before. Log it again?");
       if (!ok) return;
     }
-    const res = await logWear(topId, bottomId, date);
+    const res = await logWear(topId, bottomId, day);
     refresh();
     toast.success(res.duplicate ? "Already logged today — counted once" : "Logged — nice choice");
   }
+
+  const recordWear = (topId: string, bottomId: string) => saveWear(topId, bottomId, date);
 
   const ready = items.data && wears.data && feedback.data && outfits.data;
 
