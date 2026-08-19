@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { logWear, pairWornOn, rateOutfit, saveSuggestions } from "@/lib/actions";
 import { generateMatches, today, type Item } from "@/lib/wardrobe";
+import { GarmentImage } from "@/components/GarmentImage";
+import { deleteWear } from "@/lib/actions";
 import { useFeedback, useItems, useOutfits, useRefreshWardrobe, useWears } from "@/hooks/useWardrobe";
 
 export const Route = createFileRoute("/_authenticated/today")({
@@ -65,10 +67,37 @@ function TodayPage() {
     [outfits.data, date],
   );
 
-  // Generate and persist today's edit once
+  // Signature of the pieces eligible for today's edit — changes when you add,
+  // remove or restyle a piece, which means the edit should be rebuilt.
+  const signature = useMemo(
+    () =>
+      (items.data ?? [])
+        .filter((i) => i.status === "active")
+        .map((i) => i.id)
+        .sort()
+        .join(","),
+    [items.data],
+  );
+
+  // Generate and persist today's edit; rebuild it when the closet changes.
   useEffect(() => {
     if (!ready || special) return;
-    if (todays.length > 0) return;
+    const key = `edit-signature-${date}`;
+    const stale = typeof window !== "undefined" && window.localStorage.getItem(key) !== signature;
+    if (todays.length > 0 && !stale) return;
+    if (todays.length > 0 && stale) {
+      // Keep looks you already rated or wore; refresh the rest with the new pieces.
+      supabase
+        .from("outfits")
+        .delete()
+        .eq("suggested_on", date)
+        .is("rating", null)
+        .then(() => {
+          window.localStorage.setItem(key, signature);
+          refresh();
+        });
+      return;
+    }
     const matches = generateMatches({
       items: items.data!,
       wears: wears.data!,
@@ -77,8 +106,11 @@ function TodayPage() {
       date,
     });
     if (!matches.length) return;
-    saveSuggestions(matches, date).then(refresh);
-  }, [ready, todays.length, special]); // eslint-disable-line react-hooks/exhaustive-deps
+    saveSuggestions(matches, date).then(() => {
+      if (typeof window !== "undefined") window.localStorage.setItem(key, signature);
+      refresh();
+    });
+  }, [ready, todays.length, special, signature]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const specialMatches = useMemo(() => {
     if (!ready || !special) return [];
@@ -101,9 +133,21 @@ function TodayPage() {
     () => new Set((wears.data ?? []).filter((w) => w.worn_on === date).map((w) => `${w.top_id}|${w.bottom_id}`)),
     [wears.data, date],
   );
+  const loggedToday = useMemo(() => {
+    const seen = new Set<string>();
+    return (wears.data ?? [])
+      .filter((w) => w.worn_on === date)
+      .filter((w) => {
+        const key = `${w.top_id}|${w.bottom_id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }, [wears.data, date]);
 
   async function reshuffle() {
     await supabase.from("outfits").delete().eq("suggested_on", date).is("rating", null);
+    if (typeof window !== "undefined") window.localStorage.removeItem(`edit-signature-${date}`);
     refresh();
     toast.success("New edit coming up");
   }
@@ -131,6 +175,38 @@ function TodayPage() {
           Show occasion (special) pieces
         </Label>
       </div>
+
+      {loggedToday.length > 0 && (
+        <section className="mb-8 border border-border bg-card p-4">
+          <h2 className="eyebrow">Already logged today</h2>
+          <ul className="mt-3 space-y-3">
+            {loggedToday.map((w) => {
+              const top = byId.get(w.top_id ?? "");
+              const bottom = byId.get(w.bottom_id ?? "");
+              return (
+                <li key={w.id} className="flex items-center gap-3">
+                  {top && <GarmentImage item={top} className="h-14 w-11" />}
+                  {bottom && <GarmentImage item={bottom} className="h-14 w-11" />}
+                  <p className="flex-1 text-sm">
+                    {top?.name ?? "—"} <span className="text-muted-foreground">+</span> {bottom?.name ?? "—"}
+                  </p>
+                  <button
+                    className="eyebrow hover:text-foreground"
+                    onClick={async () => {
+                      if (!window.confirm("Remove this from today's log?")) return;
+                      await deleteWear(w.id);
+                      refresh();
+                      toast.success("Removed");
+                    }}
+                  >
+                    Remove
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {!hasCloset ? (
         <EmptyCloset />

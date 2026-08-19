@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedClosetRouteImport } from './routes/_authenticated/closet'
 import { Route as AuthenticatedDecideRouteImport } from './routes/_authenticated/decide'
 import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated/insights'
@@ -31,6 +32,11 @@ const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedClosetRoute = AuthenticatedClosetRouteImport.update({
   id: '/closet',
@@ -61,6 +67,7 @@ const AuthenticatedUnlovedRoute = AuthenticatedUnlovedRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/closet': typeof AuthenticatedClosetRoute
   '/decide': typeof AuthenticatedDecideRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/closet': typeof AuthenticatedClosetRoute
   '/decide': typeof AuthenticatedDecideRoute
   '/insights': typeof AuthenticatedInsightsRoute
@@ -81,6 +89,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/closet': typeof AuthenticatedClosetRoute
   '/_authenticated/decide': typeof AuthenticatedDecideRoute
   '/_authenticated/insights': typeof AuthenticatedInsightsRoute
@@ -90,15 +99,30 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/closet' | '/decide' | '/insights' | '/today' | '/unloved'
+    | '/'
+    | '/auth'
+    | '/calendar'
+    | '/closet'
+    | '/decide'
+    | '/insights'
+    | '/today'
+    | '/unloved'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/auth' | '/closet' | '/decide' | '/insights' | '/today' | '/unloved'
+    | '/'
+    | '/auth'
+    | '/calendar'
+    | '/closet'
+    | '/decide'
+    | '/insights'
+    | '/today'
+    | '/unloved'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/calendar'
     | '/_authenticated/closet'
     | '/_authenticated/decide'
     | '/_authenticated/insights'
@@ -134,6 +158,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/calendar': {
+      id: '/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/closet': {
       id: '/_authenticated/closet'
@@ -174,6 +205,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedClosetRoute: typeof AuthenticatedClosetRoute
   AuthenticatedDecideRoute: typeof AuthenticatedDecideRoute
   AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
@@ -182,6 +214,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedClosetRoute: AuthenticatedClosetRoute,
   AuthenticatedDecideRoute: AuthenticatedDecideRoute,
   AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
