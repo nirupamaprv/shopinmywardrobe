@@ -62,6 +62,19 @@ export async function setStatus(ids: string[], status: Status) {
   await supabase.from("items").update({ status }).in("id", ids);
 }
 
+export async function updateWear(
+  id: string,
+  patch: { top_id?: string; bottom_id?: string; worn_on?: string },
+) {
+  const { error } = await supabase.from("wears").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteWear(id: string) {
+  const { error } = await supabase.from("wears").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function saveSuggestions(suggestions: Suggestion[], date: string) {
   const { data: userData } = await supabase.auth.getUser();
   const user_id = userData.user?.id;
