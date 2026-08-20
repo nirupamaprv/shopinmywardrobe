@@ -24,9 +24,9 @@ import { useFeedback, useItems, useOutfits, useRefreshWardrobe, useWears } from 
 export const Route = createFileRoute("/_authenticated/today")({
   head: () => ({
     meta: [
-      { title: "Today's edit — Wardrobe" },
+      { title: "Today’s Choices — Wardrobe" },
       { name: "description", content: "Your daily outfit pairings, styled from your own closet." },
-      { property: "og:title", content: "Today's edit — Wardrobe" },
+      { property: "og:title", content: "Today’s Choices — Wardrobe" },
       { property: "og:description", content: "Five fresh pairings a day from pieces you own." },
     ],
   }),
@@ -158,7 +158,7 @@ function TodayPage() {
 
   return (
     <AppShell
-      title="Today's edit"
+      title="Today’s Choices"
       subtitle="Fresh pairings that skip the colors you wore in the last three days, and skip anything stored as seasonal or saved for occasions."
       action={
         <div className="flex items-center gap-3">

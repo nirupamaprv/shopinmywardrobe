@@ -14,9 +14,9 @@ import { useItems, useRefreshWardrobe, useWears } from "@/hooks/useWardrobe";
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({
     meta: [
-      { title: "Wear calendar — Wardrobe" },
+      { title: "Calendar View — Wardrobe" },
       { name: "description", content: "A month-by-month record of the outfits you actually wore." },
-      { property: "og:title", content: "Wear calendar — Wardrobe" },
+      { property: "og:title", content: "Calendar View — Wardrobe" },
       { property: "og:description", content: "See and edit every combination you logged, day by day." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -70,7 +70,7 @@ function CalendarPage() {
 
   return (
     <AppShell
-      title="Calendar"
+      title="Calendar View"
       subtitle="Every combination you logged, day by day. Tap a date to add, change or remove what you wore."
       action={
         <div className="flex items-center gap-2">
