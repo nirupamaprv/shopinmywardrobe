@@ -66,8 +66,23 @@ export function colorHex(value: string): string {
   return COLORS.find((c) => c.value === value)?.hex ?? "#b9b2a7";
 }
 
+/** Format a Date as YYYY-MM-DD using the device's local calendar day (not UTC). */
+export function localISODate(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** The user's current calendar day, in their own time zone. */
 export function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return localISODate();
+}
+
+/** The day before a YYYY-MM-DD string, time-zone safe. */
+export function prevDay(date: string): string {
+  const parts = date.split("-").map(Number);
+  const y = parts[0] ?? 1970;
+  const m = parts[1] ?? 1;
+  const d = parts[2] ?? 1;
+  return localISODate(new Date(y, m - 1, d - 1));
 }
 
 export function daysBetween(a: string, b: string): number {

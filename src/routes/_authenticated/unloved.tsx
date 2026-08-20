@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { setStatus } from "@/lib/actions";
-import { itemStats, isUnloved } from "@/lib/wardrobe";
+import { itemStats, isUnloved, today } from "@/lib/wardrobe";
 import { useFeedback, useItems, useRefreshWardrobe } from "@/hooks/useWardrobe";
 
 export const Route = createFileRoute("/_authenticated/unloved")({
@@ -41,7 +41,7 @@ function UnlovedPage() {
   }, [unloved.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const month = new Date().toISOString().slice(0, 7);
+    const month = today().slice(0, 7);
     supabase
       .from("unloved_reviews")
       .select("reviewed_on")
@@ -64,7 +64,7 @@ function UnlovedPage() {
   async function recordReview() {
     const { data: userData } = await supabase.auth.getUser();
     if (userData.user) {
-      await supabase.from("unloved_reviews").insert({ user_id: userData.user.id });
+      await supabase.from("unloved_reviews").insert({ user_id: userData.user.id, reviewed_on: today() });
     }
     setReviewedThisMonth(true);
   }
