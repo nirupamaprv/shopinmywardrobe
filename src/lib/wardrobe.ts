@@ -78,7 +78,10 @@ export function today(): string {
 
 /** The day before a YYYY-MM-DD string, time-zone safe. */
 export function prevDay(date: string): string {
-  const [y, m, d] = date.split("-").map(Number);
+  const parts = date.split("-").map(Number);
+  const y = parts[0] ?? 1970;
+  const m = parts[1] ?? 1;
+  const d = parts[2] ?? 1;
   return localISODate(new Date(y, m - 1, d - 1));
 }
 
