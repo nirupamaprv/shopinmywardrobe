@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { logWear, pairWornOn, rateOutfit, saveSuggestions } from "@/lib/actions";
-import { generateMatches, today, type Item } from "@/lib/wardrobe";
+import { generateMatches, prevDay, today, type Item } from "@/lib/wardrobe";
 import { GarmentImage } from "@/components/GarmentImage";
 import { deleteWear } from "@/lib/actions";
 import { useFeedback, useItems, useOutfits, useRefreshWardrobe, useWears } from "@/hooks/useWardrobe";
