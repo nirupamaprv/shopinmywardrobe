@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Status, Suggestion } from "./wardrobe";
-import { today } from "./wardrobe";
+import { localISODate, today } from "./wardrobe";
 
 export async function rateOutfit(outfitId: string, topId: string, bottomId: string, value: 1 | -1) {
   const { data: userData } = await supabase.auth.getUser();
@@ -40,7 +40,7 @@ export async function logWear(
   await supabase.from("items").update({ last_worn_at: wornOn }).in("id", [topId, bottomId]);
 
   // Keep only the last 365 days of outfit history (pieces themselves are never removed).
-  const cutoff = new Date(Date.now() - 365 * 86400000).toISOString().slice(0, 10);
+  const cutoff = localISODate(new Date(Date.now() - 365 * 86400000));
   await supabase.from("wears").delete().lt("worn_on", cutoff);
   await supabase.from("outfits").delete().lt("suggested_on", cutoff);
 
