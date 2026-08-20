@@ -44,7 +44,7 @@ function TodayPage() {
 
   async function saveWear(topId: string, bottomId: string, day: string) {
     const all = wears.data ?? [];
-    const prev = new Date(new Date(day).getTime() - 86400000).toISOString().slice(0, 10);
+    const prev = prevDay(day);
     if (pairWornOn(all, topId, bottomId, day)) {
       toast.info("Already logged today — counted once");
       return;
