@@ -23,7 +23,7 @@ export function useWears() {
     queryFn: async (): Promise<Wear[]> => {
       const { data, error } = await supabase
         .from("wears")
-        .select("id, top_id, bottom_id, worn_on")
+        .select("id, top_id, bottom_id, worn_on, created_at")
         .order("worn_on", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Wear[];
