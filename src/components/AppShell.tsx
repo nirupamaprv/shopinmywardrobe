@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { to: "/today", label: "Today" },
+  { to: "/today", label: "Today’s Choices" },
   { to: "/closet", label: "Closet" },
-  { to: "/calendar", label: "Calendar" },
+  { to: "/calendar", label: "Calendar View" },
   { to: "/decide", label: "Decide" },
   { to: "/unloved", label: "Unloved" },
   { to: "/insights", label: "Insights" },
