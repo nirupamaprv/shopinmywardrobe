@@ -7,8 +7,9 @@ import { GarmentImage } from "@/components/GarmentImage";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { deleteWear, logWear, updateWear } from "@/lib/actions";
-import { distinctWears, today, type Item, type Wear } from "@/lib/wardrobe";
+import { deleteWear, logWear, shiftWearDates, updateWear } from "@/lib/actions";
+import { distinctWears, localISODate, today, type Item, type Wear } from "@/lib/wardrobe";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useItems, useRefreshWardrobe, useWears } from "@/hooks/useWardrobe";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
