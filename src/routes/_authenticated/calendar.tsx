@@ -75,6 +75,13 @@ function CalendarPage() {
       subtitle="Every combination you logged, day by day. Tap a date to add, change or remove what you wore."
       action={
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="rounded-none text-[11px] uppercase tracking-[0.18em]"
+            onClick={() => setShiftOpen(true)}
+          >
+            Legacy date shift
+          </Button>
           <Button variant="outline" size="icon" className="rounded-none" onClick={() => shift(-1)} aria-label="Previous month">
             <ChevronLeft className="h-4 w-4" />
           </Button>
