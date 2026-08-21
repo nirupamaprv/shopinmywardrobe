@@ -136,7 +136,131 @@ function CalendarPage() {
         wears={selected ? (byDay.get(selected) ?? []) : []}
         refresh={refresh}
       />
+
+      <LegacyShiftDialog
+        open={shiftOpen}
+        onClose={() => setShiftOpen(false)}
+        items={items.data ?? []}
+        wears={wears.data ?? []}
+        refresh={refresh}
+      />
     </AppShell>
+  );
+}
+
+/** Entries whose stored day differs from the local day they were logged on. */
+function misdatedWears(wears: Wear[]) {
+  return wears
+    .filter((w) => w.created_at)
+    .map((w) => ({ wear: w, correctDay: localISODate(new Date(w.created_at!)) }))
+    .filter((e) => e.correctDay !== e.wear.worn_on)
+    .sort((a, b) => (a.correctDay < b.correctDay ? 1 : -1));
+}
+
+function LegacyShiftDialog({
+  open,
+  onClose,
+  items,
+  wears,
+  refresh,
+}: {
+  open: boolean;
+  onClose: () => void;
+  items: Item[];
+  wears: Wear[];
+  refresh: () => void;
+}) {
+  const candidates = useMemo(() => misdatedWears(wears), [wears]);
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+  const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
+
+  const chosen = candidates.filter((c) => !excluded.has(c.wear.id));
+
+  function toggle(id: string) {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function label(date: string) {
+    return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto rounded-none">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl font-light">Legacy date shift</DialogTitle>
+        </DialogHeader>
+
+        <p className="text-sm text-muted-foreground">
+          Outfits logged in the evening were once filed under the next calendar day. These entries
+          can be moved back to the day you actually logged them. Untick anything you want left as
+          it is.
+        </p>
+
+        {candidates.length === 0 ? (
+          <p className="mt-4 text-sm">Nothing to fix — every entry sits on the right day.</p>
+        ) : (
+          <div className="mt-2 space-y-2">
+            {candidates.map(({ wear, correctDay }) => (
+              <label
+                key={wear.id}
+                className="flex cursor-pointer items-start gap-3 border border-border p-3"
+              >
+                <Checkbox
+                  checked={!excluded.has(wear.id)}
+                  onCheckedChange={() => toggle(wear.id)}
+                  className="mt-0.5 rounded-none"
+                />
+                <span className="text-sm">
+                  <span className="block">
+                    {byId.get(wear.top_id ?? "")?.name ?? "—"} +{" "}
+                    {byId.get(wear.bottom_id ?? "")?.name ?? "—"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {label(wear.worn_on)} → {label(correctDay)}
+                  </span>
+                </span>
+              </label>
+            ))}
+
+            <Button
+              className="w-full rounded-none text-xs uppercase tracking-[0.18em]"
+              disabled={!chosen.length || busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  const res = await shiftWearDates(
+                    chosen.map((c) => ({ id: c.wear.id, correctDay: c.correctDay })),
+                    wears,
+                  );
+                  refresh();
+                  setExcluded(new Set());
+                  toast.success(
+                    res.merged
+                      ? `Moved ${res.moved}; ${res.merged} merged into existing entries`
+                      : `Moved ${res.moved} ${res.moved === 1 ? "entry" : "entries"}`,
+                  );
+                  onClose();
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              {busy ? "Shifting…" : `Shift ${chosen.length} selected`}
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
