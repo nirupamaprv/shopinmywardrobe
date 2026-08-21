@@ -19,7 +19,6 @@ export interface Wear {
   top_id: string | null;
   bottom_id: string | null;
   worn_on: string;
-  created_at?: string;
 }
 
 export interface Feedback {
