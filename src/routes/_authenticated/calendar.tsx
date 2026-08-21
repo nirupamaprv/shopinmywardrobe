@@ -127,14 +127,6 @@ function CalendarPage() {
         wears={selected ? (byDay.get(selected) ?? []) : []}
         refresh={refresh}
       />
-
-      <LegacyShiftDialog
-        open={shiftOpen}
-        onClose={() => setShiftOpen(false)}
-        items={items.data ?? []}
-        wears={wears.data ?? []}
-        refresh={refresh}
-      />
     </AppShell>
   );
 }
