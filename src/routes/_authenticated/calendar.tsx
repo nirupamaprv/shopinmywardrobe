@@ -43,6 +43,7 @@ function CalendarPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [selected, setSelected] = useState<string | null>(null);
+  const [shiftOpen, setShiftOpen] = useState(false);
 
   const byId = useMemo(() => new Map((items.data ?? []).map((i) => [i.id, i])), [items.data]);
 
