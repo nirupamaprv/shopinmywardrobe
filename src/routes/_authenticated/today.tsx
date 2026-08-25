@@ -169,12 +169,17 @@ function TodayPage() {
         </div>
       }
     >
+      <div className="mb-6">
+        <StreakBar wears={wears.data ?? []} />
+      </div>
+
       <div className="mb-6 flex items-center gap-3 border-y border-border py-3">
         <Switch id="special" checked={special} onCheckedChange={setSpecial} />
         <Label htmlFor="special" className="eyebrow cursor-pointer">
           Show occasion (special) pieces
         </Label>
       </div>
+
 
       {loggedToday.length > 0 && (
         <section className="mb-8 border border-border bg-card p-4">
