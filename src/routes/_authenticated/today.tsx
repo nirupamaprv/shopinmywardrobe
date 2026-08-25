@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
+import { StreakBar } from "@/components/StreakBar";
 import { OutfitCard } from "@/components/OutfitCard";
 import { Button } from "@/components/ui/button";
 import {
