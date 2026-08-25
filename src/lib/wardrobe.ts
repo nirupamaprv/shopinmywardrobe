@@ -251,3 +251,73 @@ export function generateMatches({
   }
   return chosen.slice(0, count);
 }
+
+/* ---------- Streaks (Kindle-style logging cadence) ---------- */
+
+export interface StreakInfo {
+  /** Consecutive days logged, ending today (or yesterday if today isn't logged yet). */
+  current: number;
+  longest: number;
+  /** True when today has no wear logged yet but yesterday did — streak is at risk. */
+  atRisk: boolean;
+  loggedToday: boolean;
+  totalDays: number;
+  earned: number[];
+  next: number | null;
+}
+
+/** Milestone ladder: 1, 3, 7, 14, then a weekly cadence. */
+export function streakMilestones(upTo: number): number[] {
+  const base = [1, 3, 7, 14];
+  const out = [...base];
+  let n = 21;
+  while (n <= Math.max(upTo + 7, 28)) {
+    out.push(n);
+    n += 7;
+  }
+  return out;
+}
+
+export function milestoneLabel(days: number): string {
+  if (days === 1) return "First log";
+  if (days === 3) return "3-day streak";
+  if (days === 7) return "One week";
+  if (days === 14) return "Two weeks";
+  if (days % 28 === 0) return `${days / 28} month${days / 28 === 1 ? "" : "s"}`;
+  return `${days / 7} weeks`;
+}
+
+export function computeStreak(wears: Wear[], from = today()): StreakInfo {
+  const days = new Set(wears.map((w) => w.worn_on));
+  const loggedToday = days.has(from);
+  let cursor = loggedToday ? from : prevDay(from);
+  let current = 0;
+  while (days.has(cursor)) {
+    current++;
+    cursor = prevDay(cursor);
+  }
+
+  const sorted = [...days].sort();
+  let longest = 0;
+  let run = 0;
+  let prev: string | null = null;
+  for (const d of sorted) {
+    run = prev && prevDay(d) === prev ? run + 1 : 1;
+    longest = Math.max(longest, run);
+    prev = d;
+  }
+
+  const ladder = streakMilestones(current);
+  const earned = ladder.filter((m) => m <= current);
+  const next = ladder.find((m) => m > current) ?? null;
+
+  return {
+    current,
+    longest,
+    atRisk: !loggedToday && current > 0,
+    loggedToday,
+    totalDays: days.size,
+    earned,
+    next,
+  };
+}

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
+import { StreakBar } from "@/components/StreakBar";
 import { GarmentImage } from "@/components/GarmentImage";
 import { colorHex, daysSince, distinctWears, itemStats, wearCount, wearCountWithin } from "@/lib/wardrobe";
 import { useFeedback, useItems, useOutfits, useWears } from "@/hooks/useWardrobe";
@@ -73,6 +74,10 @@ function InsightsPage() {
       title="Insights"
       subtitle="Your real style, measured from what you actually put on — so your next shopping trip buys more of it."
     >
+      <div className="mb-8">
+        <StreakBar wears={wears.data ?? []} />
+      </div>
+
       <div className="grid gap-5 sm:grid-cols-4">
         {[
           ["Pieces", data.total],
