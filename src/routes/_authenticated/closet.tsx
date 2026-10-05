@@ -314,9 +314,14 @@ function AddItemDialog({ category, onDone }: { category: Category; onDone: () =>
 
       let image_path: string | null = null;
       if (file) {
-        const ext = file.name.split(".").pop() ?? "jpg";
+        const { shrinkImage } = await import("@/lib/shrinkImage");
+        const blob = await shrinkImage(file);
+        const isJpeg = blob !== file || /jpe?g$/i.test(file.name);
+        const ext = isJpeg ? "jpg" : (file.name.split(".").pop() ?? "jpg");
         const path = `${user_id}/${crypto.randomUUID()}.${ext}`;
-        const { error } = await supabase.storage.from("garments").upload(path, file);
+        const { error } = await supabase.storage
+          .from("garments")
+          .upload(path, blob, { contentType: blob.type || file.type || "image/jpeg" });
         if (error) throw error;
         image_path = path;
       }
