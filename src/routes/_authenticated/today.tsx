@@ -194,7 +194,7 @@ function TodayPage() {
                   {top && <GarmentImage item={top} className="h-14 w-11" />}
                   {bottom && <GarmentImage item={bottom} className="h-14 w-11" />}
                   <p className="flex-1 text-sm">
-                    {top?.name ?? "—"} <span className="text-muted-foreground">+</span> {bottom?.name ?? "—"}
+                    {top?.name ?? "Purged clothing"} <span className="text-muted-foreground">+</span> {bottom?.name ?? "Purged clothing"}
                   </p>
                   <button
                     className="eyebrow hover:text-foreground"

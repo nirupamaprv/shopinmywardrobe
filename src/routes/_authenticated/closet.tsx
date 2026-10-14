@@ -137,58 +137,119 @@ function ItemCard({ item, wears, onDone }: { item: Item; wears: Wear[]; onDone: 
 
 function DeleteItemButton({ item, wornDays, onDone }: { item: Item; wornDays: number; onDone: () => void }) {
   const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<"confirm" | "logs" | "erase">("confirm");
+
+  async function run(mode: "keep" | "erase") {
+    setBusy(true);
+    try {
+      if (mode === "erase") {
+        const { error: e1 } = await supabase.from("wears").delete().eq("top_id", item.id);
+        if (e1) throw e1;
+        const { error: e2 } = await supabase.from("wears").delete().eq("bottom_id", item.id);
+        if (e2) throw e2;
+      }
+      // "keep": the database clears the link, so logs remain and show as "Purged clothing".
+      if (item.image_path) await supabase.storage.from("garments").remove([item.image_path]);
+      const { error } = await supabase.from("items").delete().eq("id", item.id);
+      if (error) throw error;
+      setOpen(false);
+      onDone();
+      toast.success(mode === "keep" ? "Deleted — logs kept as “Purged clothing”" : "Deleted along with its logs");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not delete");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <AlertDialog>
+    <AlertDialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setStep("confirm");
+      }}
+    >
       <AlertDialogTrigger asChild>
         <button className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-destructive">
           <Trash2 className="h-3 w-3" /> Delete
         </button>
       </AlertDialogTrigger>
       <AlertDialogContent className="rounded-none">
-        <AlertDialogHeader>
-          <AlertDialogTitle className="font-display text-2xl font-light">
-            Delete “{item.name}”?
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {wornDays > 0 ? (
-              <>
-                This piece is in your wear logs — it was worn on {wornDays} distinct{" "}
-                {wornDays === 1 ? "day" : "days"}. Deleting it will also permanently erase those wear
-                records, past outfit pairings and likes/dislikes tied to it. Your history counts and
-                Insights will change. This cannot be undone.
-              </>
-            ) : (
-              <>
-                This piece has never been logged as worn. It will be removed from your closet along with
-                its photo. This cannot be undone.
-              </>
-            )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel className="rounded-none">Keep it</AlertDialogCancel>
-          <AlertDialogAction
-            disabled={busy}
-            className="rounded-none bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            onClick={async (e) => {
-              e.preventDefault();
-              setBusy(true);
-              try {
-                if (item.image_path) await supabase.storage.from("garments").remove([item.image_path]);
-                const { error } = await supabase.from("items").delete().eq("id", item.id);
-                if (error) throw error;
-                onDone();
-                toast.success("Removed from closet");
-              } catch (err) {
-                toast.error(err instanceof Error ? err.message : "Could not delete");
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            Delete permanently
-          </AlertDialogAction>
-        </AlertDialogFooter>
+        {step === "confirm" && (
+          <>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-display text-2xl font-light">Delete “{item.name}”?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This piece and its photo will be removed from your closet. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-none">Keep it</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={busy}
+                className="rounded-none bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (wornDays > 0) setStep("logs");
+                  else run("keep");
+                }}
+              >
+                Yes, delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </>
+        )}
+        {step === "logs" && (
+          <>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-display text-2xl font-light">What about its logs?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This piece was worn on {wornDays} {wornDays === 1 ? "day" : "days"}. You can keep those
+                entries, renamed “Purged clothing”, or delete the logs too.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex flex-col gap-2">
+              <Button disabled={busy} onClick={() => run("keep")} className="rounded-none text-xs uppercase tracking-[0.18em]">
+                Keep logs as “Purged clothing”
+              </Button>
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => setStep("erase")}
+                className="rounded-none text-xs uppercase tracking-[0.18em]"
+              >
+                Delete the logs too
+              </Button>
+              <AlertDialogCancel className="rounded-none">Cancel</AlertDialogCancel>
+            </div>
+          </>
+        )}
+        {step === "erase" && (
+          <>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-display text-2xl font-light">Delete the logs too?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Every outfit entry with this piece will be erased. This may cause your streaks and logs to
+                be lost or changed, and Insights will update. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-none">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={busy}
+                className="rounded-none bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={(e) => {
+                  e.preventDefault();
+                  run("erase");
+                }}
+              >
+                {busy ? "Deleting…" : "Delete piece and logs"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </>
+        )}
       </AlertDialogContent>
     </AlertDialog>
   );
