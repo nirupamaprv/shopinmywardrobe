@@ -108,7 +108,7 @@ function CalendarPage() {
               <div className="mt-1 space-y-1">
                 {list.slice(0, 2).map((w) => (
                   <p key={w.id} className="truncate text-[11px] leading-tight">
-                    {byId.get(w.top_id ?? "")?.name ?? "—"} + {byId.get(w.bottom_id ?? "")?.name ?? "—"}
+                    {byId.get(w.top_id ?? "")?.name ?? "Purged clothing"} + {byId.get(w.bottom_id ?? "")?.name ?? "Purged clothing"}
                   </p>
                 ))}
                 {list.length > 2 && (
