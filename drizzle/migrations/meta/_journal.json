@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792020797381,
+      "tag": "0000_wears_keep_on_item_delete",
+      "breakpoints": true
+    }
+  ]
+}
